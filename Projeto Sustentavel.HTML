@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resíduos Sustentáveis</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Feather Icons -->
+    <script src="https://unpkg.com/feather-icons"></script>
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
+    
+    <!-- React and ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    
+    <!-- Babel for JSX -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        // App.jsx
+        // Este é o componente principal da aplicação React para o sistema "Resíduos Sustentáveis".
+        // Ele gerencia a navegação entre as telas (Solicitar Coleta, Painel de Solicitações, Controle de Frotas)
+        // e simula a interação com um backend para o envio de solicitações.
+
+        const { useState, useEffect } = React;
+        const { createRoot } = ReactDOM;
+
+        // Mock data: Dados de exemplo para popular as listas de solicitações e frotas.
+        // Em uma aplicação real, estes dados seriam obtidos de um backend via APIs.
+        const mockSolicitacoes = [
+            { id: 'S745', tipo: 'Lixo Eletrônico', user: 'Ana Carolina', data: '15/06/2025 10:30', status: 'Em análise' },
+            { id: 'S744', tipo: 'Óleo de Cozinha', user: 'Marcos Pereira', data: '14/06/2025 17:00', status: 'Processo finalizado' },
+            { id: 'S743', tipo: 'Recicláveis (Plástico)', user: 'Juliana Costa', data: '14/06/2025 14:15', status: 'Agendado' },
+            { id: 'S742', tipo: 'Móveis e Entulhos', user: 'Rafael Souza', data: '13/06/2025 09:00', status: 'Falha na Coleta' },
+            { id: 'S741', tipo: 'Resíduos Orgânicos', user: 'Beatriz Lima', data: '12/06/2025 11:45', status: 'Processo finalizado' },
+        ];
+
+        const mockFrotas = [
+            { id: 'V-01', modelo: 'Mercedes-Benz Atego', placa: 'RST-1234', motorista: 'Carlos Almeida', capacidade: '8 Ton', status: 'Em rota', img: 'https://placehold.co/150x100/006442/FFFFFF?text=V-01' },
+            { id: 'V-02', modelo: 'Volkswagen Constellation', placa: 'XYZ-5678', motorista: 'Fernanda Rocha', capacidade: '12 Ton', status: 'Disponível', img: 'https://placehold.co/150x100/71717A/FFFFFF?text=V-02' },
+            { id: 'V-03', modelo: 'Scania P320', placa: 'ABC-9012', motorista: 'Roberto Dias', capacidade: '15 Ton', status: 'Em manutenção', img: 'https://placehold.co/150x100/F59E0B/FFFFFF?text=V-03' },
+        ];
+
+        // Função utilitária para mapear o status para estilos CSS (cores, etc.).
+        // Isso mantém a consistência visual do Design System "Eco-Tech" original.
+        const getStatusStyles = (status) => {
+            let styles = { bg: 'bg-status-gray-light', text: 'text-status-gray', dot: 'dot-status-gray' };
+            switch (status.toLowerCase()) {
+                case 'processo finalizado': styles = { bg: 'bg-status-green-light', text: 'text-status-green', dot: 'dot-status-green' }; break;
+                case 'em análise': styles = { bg: 'bg-status-yellow-light', text: 'text-status-yellow', dot: 'dot-status-yellow' }; break;
+                case 'falha na coleta':
+                case 'em manutenção': styles = { bg: 'bg-status-red-light', text: 'text-status-red', dot: 'dot-status-red' }; break;
+                case 'agendado':
+                case 'em rota': styles = { bg: 'bg-status-blue-light', text: 'text-status-blue', dot: 'dot-status-blue' }; break;
+                case 'disponível': styles = { bg: 'bg-status-green-light', text: 'text-status-green', dot: 'dot-status-green' }; break;
+                default: break;
+            }
+            return styles;
+        };
+
+        // Componente principal do aplicativo React.
+        function App() {
+            // Estado para controlar qual tela está visível no momento.
+            const [currentScreen, setCurrentScreen] = useState('solicitar');
+            // Estado para controlar a visibilidade do modal de sucesso após o envio de uma solicitação.
+            const [showModal, setShowModal] = useState(false);
+
+            // Estilos CSS personalizados injetados dinamicamente no head do documento.
+            // Isso emula as variáveis CSS e regras de fonte do protótipo HTML original.
+            const customStyles = `
+                :root {
+                    --primary-green-500: #006442;
+                    --accent-coral-500: #FF7A59;
+                    --background-gray-100: #F4F4F5;
+                    --text-gray-900: #18181B;
+                    --text-gray-500: #71717A;
+                    --status-green: #10B981;
+                    --status-yellow: #F59E0B;
+                    --status-red: #EF4444;
+                    --status-blue: #3B82F6;
+                    --status-gray: #A1A1AA;
+                }
+
+                body { font-family: 'Lato', sans-serif; }
+                h1, h2, h3, h4, h5, h6 { font-family: 'Montserrat', sans-serif; }
+
+                .bg-primary { background-color: var(--primary-green-500); }
+                .text-primary { color: var(--primary-green-500); }
+                .bg-accent { background-color: var(--accent-coral-500); }
+                .text-accent { color: var(--accent-coral-500); }
+                .border-accent { border-color: var(--accent-coral-500); }
+                .ring-accent { ring-color: var(--accent-coral-500); }
+                
+                .bg-status-green-light { background-color: #D1FAE5; }
+                .bg-status-yellow-light { background-color: #FEF3C7; }
+                .bg-status-red-light { background-color: #FEE2E2; }
+                .bg-status-blue-light { background-color: #DBEAFE; }
+                .bg-status-gray-light { background-color: #F3F4F6; }
+
+                .text-status-green { color: #065F46; }
+                .text-status-yellow { color: #92400E; }
+                .text-status-red { color: #991B1B; }
+                .text-status-blue { color: #1E40AF; }
+                .text-status-gray { color: #374151; }
+                
+                .dot-status-green { background-color: var(--status-green); }
+                .dot-status-yellow { background-color: var(--status-yellow); }
+                .dot-status-red { background-color: var(--status-red); }
+                .dot-status-blue { background-color: var(--status-blue); }
+                .dot-status-gray { background-color: var(--status-gray); }
+
+                @keyframes fadeIn {
+                    from { opacity: 0; transform: translateY(10px); }
+                    to { opacity: 1; transform: translateY(0); }
+                }
+                .fade-in { animation: fadeIn 0.5s ease-out forwards; }
+            `;
+
+            // Hook useEffect para lidar com efeitos colaterais, como a inicialização do Feather Icons.
+            // 'feather.replace()' garante que os ícones sejam renderizados após as atualizações do DOM.
+            useEffect(() => {
+                if (window.feather) {
+                    window.feather.replace();
+                }
+            }, [currentScreen]); // Executa quando a tela atual muda.
+
+            // Manipulador de envio do formulário de solicitação.
+            // Simula uma chamada assíncrona para um backend.
+            const handleSubmit = async (event) => {
+                event.preventDefault();
+                const submitBtn = document.getElementById('submit-form');
+                const spinner = document.getElementById('submit-spinner');
+                const text = document.getElementById('submit-text');
+
+                // Mostra o spinner e desabilita o botão enquanto a "requisição" está em andamento.
+                spinner.classList.remove('hidden');
+                text.classList.add('hidden');
+                submitBtn.disabled = true;
+
+                // Simula o tempo de uma requisição de rede.
+                // Aqui é onde a integração real com o backend Java ocorreria (e.g., fetch('/api/solicitacoes', ...)).
+                await new Promise(resolve => setTimeout(resolve, 1500));
+
+                setShowModal(true); // Exibe o modal de sucesso.
+                
+                // Esconde o spinner, reabilita o botão e reseta o formulário após a "resposta".
+                spinner.classList.add('hidden');
+                text.classList.remove('hidden');
+                submitBtn.disabled = false;
+                event.target.reset();
+            };
+
+            // Função para renderizar a tela de "Solicitar Coleta".
+            const renderSolicitarScreen = () => (
+                <div id="screen-solicitar" className="h-full w-full fade-in">
+                    <div className="relative h-full w-full">
+                        {/* Imagem de fundo do mapa. Usando um placeholder para o ambiente de demonstração. */}
+                        <img src="https://placehold.co/1920x1080/E0E0E0/1A1A1A?text=Mapa+da+Cidade" className="absolute inset-0 w-full h-full object-cover" alt="Mapa de fundo da cidade" />
+                        
+                        {/* Navbar flutuante sobre o mapa para navegação rápida entre as seções principais. */}
+                        <div className="absolute top-5 left-1/2 -translate-x-1/2 w-full px-4 sm:px-0 sm:w-auto">
+                            <div className="mx-auto w-full sm:w-auto bg-white/80 backdrop-blur-md rounded-full shadow-lg p-2 flex items-center justify-between space-x-4">
+                                <div className="flex-shrink-0 flex items-center pl-2">
+                                    <i data-feather="trash-2" className="w-6 h-6 text-primary"></i>
+                                </div>
+                                <div className="flex items-baseline space-x-2">
+                                    {/* Links de navegação no mapa */}
+                                    <a href="#" onClick={() => setCurrentScreen('solicitar')} className={`px-3 py-1 rounded-full text-sm font-medium ${currentScreen === 'solicitar' ? 'bg-accent text-white' : 'text-gray-500 hover:bg-gray-200'}`}>Solicitar</a>
+                                    <a href="#" onClick={() => setCurrentScreen('solicitacoes')} className={`px-3 py-1 rounded-full text-sm font-medium ${currentScreen === 'solicitacoes' ? 'bg-accent text-white' : 'text-gray-500 hover:bg-gray-200'}`}>Painel</a>
+                                    <a href="#" onClick={() => setCurrentScreen('frotas')} className={`px-3 py-1 rounded-full text-sm font-medium ${currentScreen === 'frotas' ? 'bg-accent text-white' : 'text-gray-500 hover:bg-gray-200'}`}>Frotas</a>
+                                </div>
+                                <div className="w-8"></div> {/* Espaçamento para alinhamento */}
+                            </div>
+                            {/* Campo de busca de localização no mapa */}
+                            <div className="mt-4 relative">
+                                <input type="text" placeholder="Busque pela localização" className="w-full px-5 py-3 border border-gray-300 rounded-full shadow-lg focus:outline-none focus:ring-2 focus:ring-accent" />
+                                <i data-feather="search" className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400"></i>
+                            </div>
+                        </div>
+
+                        {/* Painel lateral de solicitação (formulário) */}
+                        <div className="absolute top-0 right-0 h-full w-full md:w-2/5 lg:w-1/3 bg-white/90 backdrop-blur-sm shadow-2xl overflow-y-auto hidden md:block">
+                            <div className="p-6 md:p-8 flex flex-col h-full">
+                                <h2 className="text-3xl font-bold text-gray-800 mb-6">Solicite a Coleta</h2>
+                                <form id="collection-form" className="flex-grow flex flex-col" onSubmit={handleSubmit}>
+                                    <div className="space-y-6 flex-grow">
+                                        <div>
+                                            <label htmlFor="endereco" className="block text-sm font-medium text-gray-700 mb-1">Endereço</label>
+                                            <input type="text" id="endereco" className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent" placeholder="Rua, Número, Bairro..." required />
+                                        </div>
+                                        <div>
+                                            <label htmlFor="tipo_residuo" className="block text-sm font-medium text-gray-700 mb-1">Tipo de Resíduo</label>
+                                            <select id="tipo_residuo" className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent bg-white" required>
+                                                <option>Eletrônicos</option>
+                                                <option>Orgânicos</option>
+                                                <option>Recicláveis</option>
+                                                <option>Óleo de Cozinha</option>
+                                                <option>Móveis e Entulhos</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label htmlFor="urgencia" className="block text-sm font-medium text-gray-700 mb-1">Urgência</label>
+                                            <select id="urgencia" className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent bg-white" required>
+                                                <option>Baixa</option>
+                                                <option>Média</option>
+                                                <option>Alta</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label htmlFor="contato" className="block text-sm font-medium text-gray-700 mb-1">Contato</label>
+                                            <input type="text" id="contato" className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent" placeholder="Seu nome ou telefone" required />
+                                        </div>
+                                    </div>
+                                    <div className="mt-8">
+                                        <button type="submit" id="submit-form" className="w-full bg-accent text-white font-bold px-8 py-3 rounded-lg hover:opacity-90 transition-opacity shadow-md flex items-center justify-center">
+                                            <span id="submit-text">Enviar Solicitação</span>
+                                            {/* Spinner de carregamento, visível durante o envio */}
+                                            <svg id="submit-spinner" className="animate-spin h-5 w-5 text-white hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                            </svg>
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+
+            // Função para renderizar a tela de "Painel de Solicitações".
+            const renderSolicitacoesScreen = () => (
+                <div id="screen-solicitacoes" className="p-4 md:p-8 fade-in">
+                    <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
+                        <h2 className="text-3xl font-bold text-gray-800 mb-4 md:mb-0">Painel de Solicitações</h2>
+                        <div className="w-full md:w-auto flex items-center space-x-2">
+                            <div className="relative flex-grow">
+                                <input type="text" placeholder="Pesquisar solicitação..." className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent" />
+                                <i data-feather="search" className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400"></i>
+                            </div>
+                            <button className="flex items-center px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition">
+                                <i data-feather="filter" className="w-5 h-5 text-gray-600"></i>
+                                <span className="ml-2 hidden sm:inline">Filtrar</span>
+                            </button>
+                        </div>
+                    </div>
+                    <div id="solicitacoes-list" className="bg-white rounded-xl shadow-md overflow-hidden">
+                        <ul className="divide-y divide-gray-200">
+                            {/* Mapeia os dados mockados de solicitações para renderizar itens da lista. */}
+                            {mockSolicitacoes.map((sol) => {
+                                const statusStyles = getStatusStyles(sol.status);
+                                return (
+                                    <li key={sol.id} className="p-4 hover:bg-gray-50 transition-colors duration-200 fade-in">
+                                        <div className="grid grid-cols-2 md:grid-cols-6 gap-4 items-center">
+                                            <div className="md:col-span-2">
+                                                <p className="font-bold text-gray-800">{sol.tipo}</p>
+                                                <p className="text-sm text-gray-500">{sol.user}</p>
+                                            </div>
+                                            <div className="hidden md:block">
+                                                <p className="text-sm text-gray-500">ID</p>
+                                                <p className="font-medium text-gray-800">{sol.id}</p>
+                                            </div>
+                                            <div className="hidden md:block">
+                                                <p className="text-sm text-gray-500">Data/Hora</p>
+                                                <p className="font-medium text-gray-800">{sol.data}</p>
+                                            </div>
+                                            <div>
+                                                <p className="text-sm text-gray-500 md:hidden">Status</p>
+                                                <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${statusStyles.bg} ${statusStyles.text}`}>
+                                                    <span className={`w-2 h-2 rounded-full mr-2 ${statusStyles.dot}`}></span>
+                                                    {sol.status}
+                                                </span>
+                                            </div>
+                                            <div className="flex justify-end">
+                                                <button className="border-2 border-accent text-accent font-bold px-4 py-2 rounded-lg hover:bg-accent hover:text-white transition-colors duration-200 text-sm">Visualizar</button>
+                                            </div>
+                                        </div>
+                                    </li>
+                                );
+                            })}
+                        </ul>
+                    </div>
+                </div>
+            );
+
+            // Função para renderizar a tela de "Controle de Frotas".
+            const renderFrotasScreen = () => (
+                <div id="screen-frotas" className="p-4 md:p-8 fade-in">
+                    <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
+                        <h2 className="text-3xl font-bold text-gray-800 mb-4 md:mb-0">Controle de Frotas</h2>
+                        <div className="w-full md:w-auto flex items-center space-x-2">
+                            <div className="relative flex-grow">
+                                <input type="text" placeholder="Pesquisar veículo ou rota..." className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent" />
+                                <i data-feather="search" className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400"></i>
+                            </div>
+                            <button className="bg-accent text-white font-bold px-4 py-2 rounded-lg hover:opacity-90 transition-opacity shadow-md flex items-center">
+                                <i data-feather="plus" className="w-5 h-5 mr-2"></i>
+                                <span>Adicionar Frota</span>
+                            </button>
+                        </div>
+                    </div>
+                    <div id="frotas-list" className="bg-white rounded-xl shadow-md overflow-hidden">
+                        <ul className="divide-y divide-gray-200">
+                            {/* Mapeia os dados mockados de frotas para renderizar itens da lista. */}
+                            {mockFrotas.map((frota) => {
+                                const statusStyles = getStatusStyles(frota.status);
+                                return (
+                                    <li key={frota.id} className="p-4 hover:bg-gray-50 transition-colors duration-200 fade-in">
+                                        <div className="flex flex-col md:flex-row items-start md:items-center gap-4">
+                                            <div className="flex items-center gap-4 flex-grow">
+                                                {/* Imagem do caminhão (placeholder) */}
+                                                <img src={frota.img} alt="Foto do caminhão" className="w-24 h-16 object-cover rounded-md hidden sm:block" />
+                                                <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-4 gap-y-2 flex-grow">
+                                                    <div>
+                                                        <p className="text-sm text-gray-500">Veículo</p>
+                                                        <p className="font-bold text-gray-800">{frota.modelo}</p>
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-sm text-gray-500">Placa</p>
+                                                        <p className="font-medium text-gray-800">{frota.placa}</p>
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-sm text-gray-500">Motorista</p>
+                                                        <p className="font-medium text-gray-800">{frota.motorista}</p>
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-sm text-gray-500">Status</p>
+                                                        <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${statusStyles.bg} ${statusStyles.text}`}>
+                                                            <span className={`w-2 h-2 rounded-full mr-2 ${statusStyles.dot}`}></span>
+                                                            {frota.status}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div className="flex items-center space-x-2 flex-shrink-0 w-full md:w-auto justify-end">
+                                                <button className="text-sm font-medium text-gray-600 hover:text-accent transition-colors">Ver Detalhes</button>
+                                                <button className="text-sm font-medium border border-gray-300 px-3 py-1 rounded-md hover:border-gray-400 transition-colors">Atribuir Rota</button>
+                                                <button className="p-2 text-gray-500 hover:text-accent transition-colors"><i data-feather="edit-2" className="w-4 h-4"></i></button>
+                                            </div>
+                                        </div>
+                                    </li>
+                                );
+                            })}
+                        </ul>
+                    </div>
+                </div>
+            );
+
+            return (
+                <div className="flex flex-col h-screen">
+                    {/* Injeta os estilos personalizados no head do documento. */}
+                    {/* A propriedade dangerouslySetInnerHTML é usada para injetar HTML cru. Use com cautela. */}
+                    <style dangerouslySetInnerHTML={{ __html: customStyles }}></style>
+
+                    {/* Cabeçalho Global da Aplicação. Ele é oculto na tela de "Solicitar Coleta" para um design mais imersivo. */}
+                    <header id="global-header" className={`bg-white shadow-md w-full z-50 ${currentScreen === 'solicitar' ? 'hidden' : ''}`}>
+                        <nav className="container mx-auto px-4 sm:px-6 lg:px-8">
+                            <div className="flex items-center justify-between h-16">
+                                <div className="flex-shrink-0 flex items-center">
+                                    <i data-feather="trash-2" className="w-8 h-8 text-primary"></i>
+                                    <span className="text-xl font-bold ml-2 text-gray-800">ResíduosSustentáveis</span>
+                                </div>
+                                {/* Links de navegação para telas maiores (desktop). */}
+                                <div className="hidden md:block">
+                                    <div className="ml-10 flex items-baseline space-x-4">
+                                        <a href="#" onClick={() => setCurrentScreen('solicitar')} className={`px-3 py-2 rounded-md text-sm font-medium ${currentScreen === 'solicitar' ? 'text-primary border-b-2 border-accent' : 'text-gray-500 hover:text-gray-700'}`}>Solicitar Coleta</a>
+                                        <a href="#" onClick={() => setCurrentScreen('solicitacoes')} className={`px-3 py-2 rounded-md text-sm font-medium ${currentScreen === 'solicitacoes' ? 'text-primary border-b-2 border-accent' : 'text-gray-500 hover:text-gray-700'}`}>Solicitações</a>
+                                        <a href="#" onClick={() => setCurrentScreen('frotas')} className={`px-3 py-2 rounded-md text-sm font-medium ${currentScreen === 'frotas' ? 'text-primary border-b-2 border-accent' : 'text-gray-500 hover:text-gray-700'}`}>Controle de Frotas</a>
+                                    </div>
+                                </div>
+                                {/* Botão para menu mobile em telas menores. */}
+                                <div className="-mr-2 flex md:hidden">
+                                    <button id="mobile-menu-button" type="button" className="bg-white inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-accent">
+                                        <span className="sr-only">Abrir menu principal</span>
+                                        <i data-feather="menu" className="block h-6 w-6"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </nav>
+                        {/* Menu mobile (atualmente oculto, você precisaria adicionar lógica para alterná-lo). */}
+                        <div id="mobile-menu" className="hidden md:hidden">
+                            <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
+                                <a href="#" onClick={() => setCurrentScreen('solicitar')} className={`block px-3 py-2 rounded-md text-base font-medium ${currentScreen === 'solicitar' ? 'bg-accent text-white' : 'text-gray-500 hover:bg-gray-50'}`}>Solicitar Coleta</a>
+                                <a href="#" onClick={() => setCurrentScreen('solicitacoes')} className={`block px-3 py-2 rounded-md text-base font-medium ${currentScreen === 'solicitacoes' ? 'bg-accent text-white' : 'text-gray-500 hover:bg-gray-50'}`}>Solicitações</a>
+                                <a href="#" onClick={() => setCurrentScreen('frotas')} className={`block px-3 py-2 rounded-md text-base font-medium ${currentScreen === 'frotas' ? 'bg-accent text-white' : 'text-gray-500 hover:bg-gray-50'}`}>Controle de Frotas</a>
+                            </div>
+                        </div>
+                    </header>
+
+                    {/* Container principal para as telas. Renderiza a tela ativa com base no estado 'currentScreen'. */}
+                    <main id="main-container" className="flex-grow overflow-y-auto">
+                        {currentScreen === 'solicitar' && renderSolicitarScreen()}
+                        {currentScreen === 'solicitacoes' && renderSolicitacoesScreen()}
+                        {currentScreen === 'frotas' && renderFrotasScreen()}
+                    </main>
+
+                    {/* Modal de Sucesso, exibido após o envio bem-sucedido de uma solicitação. */}
+                    {showModal && (
+                        <div id="success-modal" className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+                            <div className="bg-white rounded-lg shadow-xl p-8 max-w-sm w-full text-center transform transition-all scale-100 opacity-100">
+                                <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100">
+                                    <i data-feather="check" className="h-6 w-6 text-green-600"></i>
+                                </div>
+                                <h3 className="text-lg leading-6 font-medium text-gray-900 mt-4">Solicitação Enviada!</h3>
+                                <div className="mt-2">
+                                    <p className="text-sm text-gray-500">Sua solicitação de coleta foi registrada com sucesso. Entraremos em contato em breve.</p>
+                                </div>
+                                <div className="mt-6">
+                                    <button onClick={() => setShowModal(false)} type="button" className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-accent text-base font-medium text-white hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-accent sm:text-sm">Fechar</button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        }
+
+        // Renderiza o componente App
+        const container = document.getElementById('root');
+        const root = createRoot(container);
+        root.render(<App />);
+    </script>
+</body>
+</html>

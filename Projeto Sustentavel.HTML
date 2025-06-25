@@ -1,3 +1,7 @@
+Peojeto Sustentavel
+c364ff8
+Projeto Sustentavel.HTML
+@@ -0,0 +1,432 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -25,7 +29,16 @@
     <div id="root"></div>
 
     <script type="text/babel">
+        // App.jsx
+        // Este é o componente principal da aplicação React para o sistema "Resíduos Sustentáveis".
+        // Ele gerencia a navegação entre as telas (Solicitar Coleta, Painel de Solicitações, Controle de Frotas)
+        // e simula a interação com um backend para o envio de solicitações.
 
+        const { useState, useEffect } = React;
+        const { createRoot } = ReactDOM;
+
+        // Mock data: Dados de exemplo para popular as listas de solicitações e frotas.
+        // Em uma aplicação real, estes dados seriam obtidos de um backend via APIs.
         const mockSolicitacoes = [
             { id: 'S745', tipo: 'Lixo Eletrônico', user: 'Ana Carolina', data: '15/06/2025 10:30', status: 'Em análise' },
             { id: 'S744', tipo: 'Óleo de Cozinha', user: 'Marcos Pereira', data: '14/06/2025 17:00', status: 'Processo finalizado' },
@@ -40,6 +53,8 @@
             { id: 'V-03', modelo: 'Scania P320', placa: 'ABC-9012', motorista: 'Roberto Dias', capacidade: '15 Ton', status: 'Em manutenção', img: 'https://placehold.co/150x100/F59E0B/FFFFFF?text=V-03' },
         ];
 
+        // Função utilitária para mapear o status para estilos CSS (cores, etc.).
+        // Isso mantém a consistência visual do Design System "Eco-Tech" original.
         const getStatusStyles = (status) => {
             let styles = { bg: 'bg-status-gray-light', text: 'text-status-gray', dot: 'dot-status-gray' };
             switch (status.toLowerCase()) {
@@ -55,11 +70,15 @@
             return styles;
         };
 
-
+        // Componente principal do aplicativo React.
         function App() {
+            // Estado para controlar qual tela está visível no momento.
             const [currentScreen, setCurrentScreen] = useState('solicitar');
+            // Estado para controlar a visibilidade do modal de sucesso após o envio de uma solicitação.
             const [showModal, setShowModal] = useState(false);
 
+            // Estilos CSS personalizados injetados dinamicamente no head do documento.
+            // Isso emula as variáveis CSS e regras de fonte do protótipo HTML original.
             const customStyles = `
                 :root {
                     --primary-green-500: #006442;
@@ -109,32 +128,41 @@
                 .fade-in { animation: fadeIn 0.5s ease-out forwards; }
             `;
 
+            // Hook useEffect para lidar com efeitos colaterais, como a inicialização do Feather Icons.
+            // 'feather.replace()' garante que os ícones sejam renderizados após as atualizações do DOM.
             useEffect(() => {
                 if (window.feather) {
                     window.feather.replace();
                 }
-            }, [currentScreen]); 
+            }, [currentScreen]); // Executa quando a tela atual muda.
 
+            // Manipulador de envio do formulário de solicitação.
+            // Simula uma chamada assíncrona para um backend.
             const handleSubmit = async (event) => {
                 event.preventDefault();
                 const submitBtn = document.getElementById('submit-form');
                 const spinner = document.getElementById('submit-spinner');
                 const text = document.getElementById('submit-text');
 
+                // Mostra o spinner e desabilita o botão enquanto a "requisição" está em andamento.
                 spinner.classList.remove('hidden');
                 text.classList.add('hidden');
                 submitBtn.disabled = true;
 
+                // Simula o tempo de uma requisição de rede.
+                // Aqui é onde a integração real com o backend Java ocorreria (e.g., fetch('/api/solicitacoes', ...)).
                 await new Promise(resolve => setTimeout(resolve, 1500));
 
-                setShowModal(true);
+                setShowModal(true); // Exibe o modal de sucesso.
                 
+                // Esconde o spinner, reabilita o botão e reseta o formulário após a "resposta".
                 spinner.classList.add('hidden');
                 text.classList.remove('hidden');
                 submitBtn.disabled = false;
                 event.target.reset();
             };
 
+            // Função para renderizar a tela de "Solicitar Coleta".
             const renderSolicitarScreen = () => (
                 <div id="screen-solicitar" className="h-full w-full fade-in">
                     <div className="relative h-full w-full">
@@ -212,6 +240,7 @@
                 </div>
             );
 
+            // Função para renderizar a tela de "Painel de Solicitações".
             const renderSolicitacoesScreen = () => (
                 <div id="screen-solicitacoes" className="p-4 md:p-8 fade-in">
                     <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
@@ -266,6 +295,7 @@
                 </div>
             );
 
+            // Função para renderizar a tela de "Controle de Frotas".
             const renderFrotasScreen = () => (
                 <div id="screen-frotas" className="p-4 md:p-8 fade-in">
                     <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
